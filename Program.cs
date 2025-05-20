@@ -1,55 +1,58 @@
-using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
-using ProofedAndPolished.Models;
-using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using ProofedAndPolished.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Read connection string from user-secrets
-var connStr = builder.Configuration["volunteer-match-APIDbConnectionString"];
-if (string.IsNullOrEmpty(connStr))
-    throw new InvalidOperationException(
-        "Connection string 'volunteer-match-APIDbConnectionString' not found.");
-
-// Register EF Core with Npgsql
-builder.Services.AddDbContext<ProofedAndPolishedDbContext>(opts =>
-    opts.UseNpgsql(connStr));
-
-// Swagger/OpenAPI
+// Enable OpenAPI (Swagger)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// JSON settings: camel‑case plus cycle‑ignore
-builder.Services.Configure<JsonOptions>(opts =>
-{
-    // produce camelCased JSON keys
-    opts.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-    opts.SerializerOptions.DictionaryKeyPolicy   = JsonNamingPolicy.CamelCase;
+// Allow passing DateTimes without timezone data
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-    // still ignore cycles
-    opts.SerializerOptions.ReferenceHandler      = ReferenceHandler.IgnoreCycles;
+// Connect API to PostgreSQL Database
+builder.Services.AddDbContext<ProofedAndPolishedDbContext>(options =>
+    options.UseNpgsql(builder.Configuration["ProofedAndPolishedDbConnectionString"]));
+
+// Set JSON serialization options (Prevents circular JSON errors)
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.SerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
 });
 
-// CORS
-builder.Services.AddCors(opts =>
-    opts.AddPolicy("AllowFrontend", p =>
-        p.WithOrigins("http://localhost:3000")
-         .AllowAnyMethod()
-         .AllowAnyHeader()
-         .AllowCredentials()));
+//  CORS Policy (Allow frontend at `localhost:3000`)
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials());
+});
 
 var app = builder.Build();
 
+// ✅ Enable CORS Middleware BEFORE routing
 app.UseCors("AllowFrontend");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
 app.UseHttpsRedirection();
 
-// Book Endpoints
+// ==============
+// CALLS
+// ==============
+
+// BOOK ENDPOINTS
 app.MapGet("/api/books", async (ProofedAndPolishedDbContext db) =>
     await db.Books.Include(b => b.Genre).Include(b => b.Service).ToListAsync());
 
@@ -83,7 +86,7 @@ app.MapDelete("/api/books/{id}", async (int id, ProofedAndPolishedDbContext db) 
     return Results.NoContent();
 });
 
-// Genre Endpoints
+// GENRE ENDPOINTS
 app.MapGet("/api/genres", async (ProofedAndPolishedDbContext db) => await db.Genres.ToListAsync());
 app.MapGet("/api/genres/{id}", async (int id, ProofedAndPolishedDbContext db) => await db.Genres.FindAsync(id));
 app.MapPost("/api/genres", async (Genre genre, ProofedAndPolishedDbContext db) =>
@@ -109,7 +112,7 @@ app.MapDelete("/api/genres/{id}", async (int id, ProofedAndPolishedDbContext db)
     return Results.NoContent();
 });
 
-// Service Endpoints
+// SERVICE ENDPOINTS
 app.MapGet("/api/services", async (ProofedAndPolishedDbContext db) => await db.Services.ToListAsync());
 app.MapGet("/api/services/{id}", async (int id, ProofedAndPolishedDbContext db) => await db.Services.FindAsync(id));
 app.MapPost("/api/services", async (Service service, ProofedAndPolishedDbContext db) =>
@@ -135,29 +138,18 @@ app.MapDelete("/api/services/{id}", async (int id, ProofedAndPolishedDbContext d
     return Results.NoContent();
 });
 
-// Favorite Endpoints
-app.MapGet("/api/favorites", async (HttpContext http, ProofedAndPolishedDbContext db) =>
+// FAVORITE ENDPOINTS
+app.MapGet("/api/favorites", async (ProofedAndPolishedDbContext db) =>
+    await db.Favorites.Include(f => f.Book).ToListAsync());
+
+app.MapPost("/api/favorites", async (Favorite favorite, ProofedAndPolishedDbContext db) =>
 {
-    var uid = http.User.FindFirst("user_id")?.Value;
-    var user = await db.Users.FirstOrDefaultAsync(u => u.Uid == uid);
-    if (user == null) return Results.Unauthorized();
-
-    return Results.Ok(await db.Favorites.Where(f => f.UserId == user.Id).Include(f => f.Book).ToListAsync());
-});
-
-app.MapPost("/api/favorites", async (Favorite favorite, HttpContext http, ProofedAndPolishedDbContext db) =>
-{
-    var uid = http.User.FindFirst("user_id")?.Value;
-    var user = await db.Users.FirstOrDefaultAsync(u => u.Uid == uid);
-    if (user == null) return Results.Unauthorized();
-
-    favorite.UserId = user.Id;
     db.Favorites.Add(favorite);
     await db.SaveChangesAsync();
     return Results.Created($"/api/favorites/{favorite.Id}", favorite);
 });
 
-app.MapPut("/api/favorites/{id}", async (int id, Favorite input, HttpContext http, ProofedAndPolishedDbContext db) =>
+app.MapPut("/api/favorites/{id}", async (int id, Favorite input, ProofedAndPolishedDbContext db) =>
 {
     var favorite = await db.Favorites.FindAsync(id);
     if (favorite == null) return Results.NotFound();
@@ -167,7 +159,7 @@ app.MapPut("/api/favorites/{id}", async (int id, Favorite input, HttpContext htt
     return Results.Ok(favorite);
 });
 
-app.MapDelete("/api/favorites/{id}", async (int id, HttpContext http, ProofedAndPolishedDbContext db) =>
+app.MapDelete("/api/favorites/{id}", async (int id, ProofedAndPolishedDbContext db) =>
 {
     var favorite = await db.Favorites.FindAsync(id);
     if (favorite == null) return Results.NotFound();
@@ -177,15 +169,15 @@ app.MapDelete("/api/favorites/{id}", async (int id, HttpContext http, ProofedAnd
     return Results.NoContent();
 });
 
-// User Endpoint
-app.MapGet("/api/users/me", async (HttpContext http, ProofedAndPolishedDbContext db) =>
+// USER ENDPOINTS
+app.MapGet("/api/users", async (ProofedAndPolishedDbContext db) => await db.Users.ToListAsync());
+app.MapGet("/api/users/{id}", async (int id, ProofedAndPolishedDbContext db) => await db.Users.FindAsync(id));
+app.MapPost("/api/users", async (User user, ProofedAndPolishedDbContext db) =>
 {
-    var uid = http.User.FindFirst("user_id")?.Value;
-    var user = await db.Users.FirstOrDefaultAsync(u => u.Uid == uid);
-    if (user == null) return Results.Unauthorized();
-    return Results.Ok(user);
+    db.Users.Add(user);
+    await db.SaveChangesAsync();
+    return Results.Created($"/api/users/{user.Id}", user);
 });
-
 app.MapPut("/api/users/{id}", async (int id, User input, ProofedAndPolishedDbContext db) =>
 {
     var user = await db.Users.FindAsync(id);
@@ -194,6 +186,13 @@ app.MapPut("/api/users/{id}", async (int id, User input, ProofedAndPolishedDbCon
     await db.SaveChangesAsync();
     return Results.Ok(user);
 });
+app.MapDelete("/api/users/{id}", async (int id, ProofedAndPolishedDbContext db) =>
+{
+    var user = await db.Users.FindAsync(id);
+    if (user == null) return Results.NotFound();
+    db.Users.Remove(user);
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+});
 
-app.MapControllers();
 app.Run();
