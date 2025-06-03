@@ -139,6 +139,17 @@ We welcome contributions! To contribute:
 
 ---
 
+## Loom Video
+https://www.loom.com/share/6513766b2a2e4e7cab91ac7ed157228a?sid=2a1aaa1b-3330-4805-ae31-6e9e1c9f08be
+
+## ERD
+
+https://drawsql.app/teams/nashville-software-school-3/diagrams/proofed-and-polished
+
+## Postman Documentation
+
+https://documenter.getpostman.com/view/31594183/2sB2qi6xDm
+
 ## 📄 License  
 This project is open source and available under the **MIT License**.
 ```
