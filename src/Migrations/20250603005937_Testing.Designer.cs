@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ProofedAndPolished.Migrations
 {
     [DbContext(typeof(ProofedAndPolishedDbContext))]
-    partial class ProofedAndPolishedDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250603005937_Testing")]
+    partial class Testing
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -113,7 +116,7 @@ namespace ProofedAndPolished.Migrations
                             Id = 1,
                             AmazonLink = "http://amazon.com/book1",
                             Author = "Jane Smith",
-                            Date = new DateTime(2025, 5, 19, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Date = new DateTime(2025, 6, 3, 0, 0, 0, 0, DateTimeKind.Utc),
                             FirebaseKey = "bk-001",
                             GenreId = 1,
                             HourlyRate = 75.00m,
@@ -134,7 +137,7 @@ namespace ProofedAndPolished.Migrations
                             Id = 2,
                             AmazonLink = "http://amazon.com/book2",
                             Author = "Tom Writer",
-                            Date = new DateTime(2025, 5, 14, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Date = new DateTime(2025, 5, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             FirebaseKey = "bk-002",
                             GenreId = 2,
                             HourlyRate = 60.00m,
@@ -142,8 +145,8 @@ namespace ProofedAndPolished.Migrations
                             Image = "http://example.com/image2.jpg",
                             InvoicedAmount = 720.00m,
                             PenName = "T.W.",
-                            PostedToFacebook = new DateTime(2025, 5, 19, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PostedToWebsite = new DateTime(2025, 5, 19, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PostedToFacebook = new DateTime(2025, 6, 3, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PostedToWebsite = new DateTime(2025, 6, 3, 0, 0, 0, 0, DateTimeKind.Utc),
                             Rate = 0.04m,
                             ServiceId = 2,
                             SubGenre = "Contemporary",
