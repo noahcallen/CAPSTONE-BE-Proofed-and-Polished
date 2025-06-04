@@ -1,9 +1,14 @@
-```
+
 # 📚 Proofed and Polished Backend API
 
 Proofed and Polished is a backend API built with **ASP.NET Core 8** and **PostgreSQL** that manages book tracking, user roles, and favorites for an editorial workflow. It supports role-based operations and full CRUD functionality across multiple resources.
 
 ---
+
+## 👤 Ideal User
+
+The ideal user for this application is someone working within an editorial or publishing workflow—such as editors, project managers, or virtual assistants—who needs a centralized system to manage books, track user responsibilities, and organize related services. Whether managing multiple authors or just keeping detailed notes on favorite books, this app is designed to simplify editorial collaboration and streamline task management.
+
 
 ## 🔧 Setup Instructions
 
@@ -149,6 +154,14 @@ https://drawsql.app/teams/nashville-software-school-3/diagrams/proofed-and-polis
 ## Postman Documentation
 
 https://documenter.getpostman.com/view/31594183/2sB2qi6xDm
+
+## Project Board
+
+https://github.com/noahcallen
+
+## Contributors
+
+https://github.com/noahcallen
 
 ## 📄 License  
 This project is open source and available under the **MIT License**.
